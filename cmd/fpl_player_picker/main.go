@@ -15,19 +15,13 @@ var (
 )
 
 func init() {
-	flag.StringVar(&_dataSource, "data-source", "C:\\Users\\panda\\go\\src\\owen_pandaram\\premier_league_scraper\\db\\premier_league_football", "sqlite file path")
+	flag.StringVar(&_dataSource, "data-source", "db/premier_league_football", "sqlite file path")
 	flag.StringVar(&_logLevel, "log-level", "info", "log level")
 }
 
 func main() {
 
 	flag.Parse()
-
-	//level , err := log.ParseLevel(_logLevel)
-	//
-	//if err != nil {
-	//	log.WithError(err).Fatal("log level")
-	//}
 
 	log.SetLevel(log.InfoLevel)
 

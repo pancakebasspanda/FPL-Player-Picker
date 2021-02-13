@@ -25,39 +25,37 @@ func New(browser playwright.Browser, storage storage.Storage) *scraper {
 
 func (s *scraper) ScrapPage() error {
 	i := 0
-	//Exit:
-	//	for {
-	page, err := s.browser.NewPage()
+Exit:
+	for {
+		page, err := s.browser.NewPage()
 
-	if err != nil {
-		log.Fatalf("could not create page: %v", err)
+		if err != nil {
+			log.Fatalf("could not create page: %v", err)
+		}
+
+		if _, err = page.Goto(_pageURL, playwright.PageGotoOptions{Timeout: playwright.Int(10000)}); err != nil {
+			log.Error("could not go to url: %v", err)
+			continue
+		}
+
+		i++
+
+		for nextClick := 0; nextClick < 1; nextClick++ {
+
+			err = page.Click("div:nth-child(2) div  div.Layout__Main-eg6k6r-1.haICgV  div.sc-AykKC.sc-AykKD.iKIfJP button:nth-child(4)")
+			if err != nil {
+				log.Error(err)
+				break Exit
+			}
+		}
+
+		page.WaitForLoadState("load")
+
+		log.Infof("scraping page %d", i)
+
+		go s.scapePlayerSummaryPage(page)
+
 	}
-
-	i++
-
-	if _, err = page.Goto(_pageURL); err != nil {
-		log.Fatalf("could not goto: %v", err)
-	}
-
-	if err != nil {
-		log.Fatalf("could not go to page: %v", err)
-	}
-
-	//for nextClick := 0; nextClick < 1; nextClick++ {
-	//
-	//	err = page.Click("div:nth-child(2) div  div.Layout__Main-eg6k6r-1.haICgV  div.sc-AykKC.sc-AykKD.iKIfJP button:nth-child(4)")
-	//	if err != nil {
-	//		log.Error(err)
-	//		break Exit
-	//	}
-	//}
-
-	page.WaitForLoadState("load")
-
-	log.Infof("scraping page %d", i)
-	s.scapePlayerSummaryPage(page)
-
-	//}
 
 	log.Infof("successfully finished scraping page")
 
@@ -115,7 +113,7 @@ func (s *scraper) scapePlayerSummaryPage(page playwright.Page) {
 	rows, err := tableBody.QuerySelectorAll("tr")
 
 	var wg sync.WaitGroup
-	playerStatsChan := make(chan storage.PlayerStatsData)
+	//playerStatsChan := make(chan storage.PlayerStatsData)
 
 	// read the player stats after we scrap summaries
 	//go func() {
@@ -227,8 +225,10 @@ func (s *scraper) scapePlayerSummaryPage(page playwright.Page) {
 
 				wg.Add(1)
 
-				go scrapePlayerStatsPage(rootDialog, &wg, playerStatsChan, player)
-
+				//go scrapePlayerStatsPage(rootDialog, &wg, playerStatsChan, player)
+				// TODO os.Remove()
+				closePlayerDialog(rootDialog)
+				wg.Done()
 			default:
 
 				colText, err := col.InnerText()
@@ -255,7 +255,7 @@ func (s *scraper) scapePlayerSummaryPage(page playwright.Page) {
 
 	wg.Wait()
 
-	close(playerStatsChan)
+	//close(playerStatsChan)
 
 }
 
@@ -345,6 +345,13 @@ func scrapePlayerStatsPage(frame playwright.ElementHandle, wg *sync.WaitGroup, s
 	playerStatsData.Rows = playerRowData
 
 	// need to hit the close button on the summary data
+	closePlayerDialog(frame)
+
+	statsChan <- playerStatsData
+}
+
+func closePlayerDialog(frame playwright.ElementHandle) {
+
 	buttons, err := frame.QuerySelectorAll("button")
 
 	if err != nil {
@@ -357,5 +364,4 @@ func scrapePlayerStatsPage(frame playwright.ElementHandle, wg *sync.WaitGroup, s
 		log.WithError(err).Error("click player stats page close button")
 	}
 
-	statsChan <- playerStatsData
 }

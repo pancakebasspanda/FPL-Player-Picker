@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	_ "github.com/mattn/go-sqlite3"
 	"pancakebasspanda/fpl_player_picker/storage"
 
@@ -13,38 +14,34 @@ const (
 	_pageURL = "https://fantasy.premierleague.com/statistics"
 )
 
-type app struct {
-}
+func Runner(storage storage.Storage) {
 
-func New() *app {
-	return &app{}
-
-}
-
-func (a *app) Runner(storage storage.Storage) {
+	ctx := context.Background()
 
 	pw, err := playwright.Run()
 
 	if err != nil {
-		log.WithError(err).Fatalf("running playwright")
+		log.WithError(err).Fatal("running playwright")
 	}
 
 	browser, err := pw.Chromium.Launch()
 
 	if err != nil {
-		log.Error(err)
+		log.WithError(err).Fatal("launching browser")
 	}
-
-	defer browser.Close()
 
 	s := scraper.New(browser, storage)
 
-	if err := s.ScrapPage(); err != nil {
-		log.WithError(err).Error("error scraping webpage")
+	if err := s.ScrapPage(ctx); err != nil {
+		log.WithError(err).Fatal("scraping page")
+	}
+
+	if err := browser.Close(); err != nil {
+		log.WithError(err).Fatal("closing page")
 	}
 
 	if err = pw.Stop(); err != nil {
-		log.Fatalf("could not stop Playwright: %v", err)
+		log.WithError(err).Fatal("stopping playwright")
 	}
 
 }

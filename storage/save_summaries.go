@@ -46,7 +46,7 @@ func (s SqlLite) SavePlayerSummaries(data PlayersSummaryData) {
 		summaryItem.Points)
 
 	if err != nil {
-		log.WithError(err).WithError(err).WithError(err).Fatal("exec insert")
+		log.WithError(err).WithError(err).Error("exec insert")
 	}
 
 	defer statement.Close()
@@ -54,10 +54,12 @@ func (s SqlLite) SavePlayerSummaries(data PlayersSummaryData) {
 	rowsAffected, err := result.RowsAffected()
 
 	if err != nil {
-		log.WithError(err).WithError(err).WithError(err).Fatal("rows affected")
+		log.WithError(err).WithError(err).Error("rows affected")
 	}
 
-	log.WithField("inserted row", fmt.Sprintf("%d", rowsAffected)).Info("inserted fields")
+	log.WithField("inserted row", fmt.Sprintf("%d", rowsAffected)).
+		WithField("summaryItem", summaryItem).
+		Debug("inserted fields")
 
 	return
 }
@@ -77,7 +79,7 @@ func convertToPlayerSummary(data PlayersSummaryData) (model.PlayerSummary, bool)
 
 				if err != nil {
 					ok = false
-					log.WithError(err).Error("cost")
+					log.WithField("cost", f).WithError(err).Error("cost")
 				}
 				summaryItem.Cost = f
 			case "selected_percentage":
@@ -88,7 +90,7 @@ func convertToPlayerSummary(data PlayersSummaryData) (model.PlayerSummary, bool)
 
 				if err != nil {
 					ok = false
-					log.WithError(err).Error("form")
+					log.WithField("form", f).WithError(err).Error("form")
 				}
 				summaryItem.Form = f
 			case "points":
@@ -96,7 +98,7 @@ func convertToPlayerSummary(data PlayersSummaryData) (model.PlayerSummary, bool)
 
 				if err != nil {
 					ok = false
-					log.WithError(err).Error("points")
+					log.WithField("points", i).WithError(err).Error("points")
 				}
 				summaryItem.Points = i
 			}

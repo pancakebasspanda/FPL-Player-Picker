@@ -20,10 +20,9 @@ func init() {
 }
 
 func main() {
-
 	flag.Parse()
 
-	log.SetLevel(log.InfoLevel)
+	//log.SetLevel(log.InfoLevel)
 
 	db, err := sql.Open("sqlite3", _dataSource)
 
@@ -31,9 +30,9 @@ func main() {
 		log.WithError(err).WithError(err).Fatal("connecting to db")
 	}
 
-	store := storage.New(db)
+	defer db.Close()
 
-	app := app.New()
+	store := storage.New(db)
 
 	app.Runner(store)
 

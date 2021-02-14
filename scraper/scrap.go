@@ -3,12 +3,25 @@ package scraper
 import (
 	"github.com/mxschmitt/playwright-go"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/semaphore"
+
 	"pancakebasspanda/fpl_player_picker/storage"
+
+	"context"
+	"fmt"
+	"runtime"
+	"strconv"
 	"sync"
 )
 
 const (
 	_pageURL = "https://fantasy.premierleague.com/statistics"
+)
+
+var (
+	_maxWorkers = runtime.GOMAXPROCS(0)
+	_sem        = semaphore.NewWeighted(int64(_maxWorkers / 2))
+	_wg         sync.WaitGroup
 )
 
 type scraper struct {
@@ -23,46 +36,92 @@ func New(browser playwright.Browser, storage storage.Storage) *scraper {
 	}
 }
 
-func (s *scraper) ScrapPage() error {
-	i := 0
-Exit:
-	for {
+func (s *scraper) findMaxPagination() (int, error) {
+	page, err := s.browser.NewPage()
+
+	defer page.Close()
+
+	if err != nil {
+		return 0, fmt.Errorf("new page: %w", err)
+	}
+
+	if _, err := page.Goto(_pageURL, playwright.PageGotoOptions{Timeout: playwright.Int(10000)}); err != nil {
+		return 0, fmt.Errorf("go to page: %w", err)
+	}
+
+	pagesText, err := page.InnerText("#root table + div div:nth-of-type(1)")
+
+	if err != nil {
+		return 0, fmt.Errorf("selecting max pages element: %w", err)
+	}
+
+	maxPagesStr := pagesText[len(pagesText)-2:]
+
+	log.Info("max pages: " + maxPagesStr)
+
+	maxPages, err := strconv.Atoi(maxPagesStr)
+
+	if err != nil {
+		return 0, fmt.Errorf("parsing max pagination number: %w", err)
+	}
+
+	return maxPages, nil
+
+}
+
+func (s *scraper) ScrapPage(ctx context.Context) error {
+	maxPages, err := s.findMaxPagination()
+	if err != nil {
+		return err
+	}
+
+	for p := 1; p <= maxPages; p++ {
 		page, err := s.browser.NewPage()
 
 		if err != nil {
-			log.Fatalf("could not create page: %v", err)
+			log.WithError(err).Error("new page")
 		}
 
-		if _, err = page.Goto(_pageURL, playwright.PageGotoOptions{Timeout: playwright.Int(10000)}); err != nil {
-			log.Error("could not go to url: %v", err)
-			continue
+		if _, err := page.Goto(_pageURL, playwright.PageGotoOptions{Timeout: playwright.Int(10000)}); err != nil {
+			log.WithError(err).Error("go to page")
 		}
 
-		i++
+		for nextClick := 1; nextClick < p; nextClick++ {
+			err = page.Click("#root table + div button:nth-of-type(3)")
 
-		for nextClick := 0; nextClick < 1; nextClick++ {
-
-			err = page.Click("div:nth-child(2) div  div.Layout__Main-eg6k6r-1.haICgV  div.sc-AykKC.sc-AykKD.iKIfJP button:nth-child(4)")
 			if err != nil {
-				log.Error(err)
-				break Exit
+				log.WithError(err).Error("pagination click")
 			}
 		}
 
 		page.WaitForLoadState("load")
 
-		log.Infof("scraping page %d", i)
+		// get current pagination number
+		pageNo, err := page.InnerText("#root strong")
 
+		if err != nil {
+			log.WithError(err).Error("selecting max pages dix")
+		}
+
+		log.WithField("page no", pageNo).Info("scraping....")
+
+		_wg.Add(1)
+		_sem.Acquire(ctx, 1)
 		go s.scapePlayerSummaryPage(page)
 
 	}
 
-	log.Infof("successfully finished scraping page")
+	_wg.Wait()
+
+	log.Info("finished scraping page")
 
 	return nil
 }
 
 func (s *scraper) scapePlayerSummaryPage(page playwright.Page) {
+	defer page.Close()
+	defer _sem.Release(1)
+	defer _wg.Done()
 
 	// summaries data
 	playerSummaries := make([]storage.PlayersSummaryData, 0)
@@ -112,7 +171,7 @@ func (s *scraper) scapePlayerSummaryPage(page playwright.Page) {
 
 	rows, err := tableBody.QuerySelectorAll("tr")
 
-	var wg sync.WaitGroup
+	//var wg sync.WaitGroup
 	//playerStatsChan := make(chan storage.PlayerStatsData)
 
 	// read the player stats after we scrap summaries
@@ -223,12 +282,13 @@ func (s *scraper) scapePlayerSummaryPage(page playwright.Page) {
 
 				playerSummaries[irow].PlayerInfo = player
 
-				wg.Add(1)
+				//wg.Add(1)
 
 				//go scrapePlayerStatsPage(rootDialog, &wg, playerStatsChan, player)
 				// TODO os.Remove()
+				log.WithField("player", player).Info("scraping player: ")
 				closePlayerDialog(rootDialog)
-				wg.Done()
+				//wg.Done()
 			default:
 
 				colText, err := col.InnerText()
@@ -253,9 +313,11 @@ func (s *scraper) scapePlayerSummaryPage(page playwright.Page) {
 		s.storage.SavePlayerSummaries(row)
 	}
 
-	wg.Wait()
+	//wg.Wait()
 
 	//close(playerStatsChan)
+
+	return
 
 }
 

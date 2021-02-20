@@ -18,12 +18,12 @@ type PlayerStat struct {
 	Assists         int    `sql:"assists"`
 	CleanSheets     int    `sql:"clean_sheets"`
 	GoalsConceded   int    `sql:"goals_conceded"`
+	GoalsSaved      int    `sql:"goals_saved"`
 	OwnGoals        int    `sql:"own_goals"`
 	PenaltiesSaved  int    `sql:"penalties_saved"`
 	PenaltiesMissed int    `sql:"penalties_missed"`
 	YellowCards     int    `sql:"yellow_cards"`
 	RedCard         int    `sql:"red_cards"`
-	Saves           int    `sql:"saves"`
 	Bonus           int    `sql:"bonus"`
 }
 

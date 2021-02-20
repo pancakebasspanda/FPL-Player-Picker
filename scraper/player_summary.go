@@ -98,6 +98,8 @@ func (s *scraper) scapePlayerSummaryPage(page playwright.Page) {
 		for i, col := range cols {
 			switch i {
 			case 0:
+
+				// wait for the player stats page to load
 				rootDialog, err := page.WaitForSelector("#root-dialog", playwright.PageWaitForSelectorOptions{
 					State: playwright.String("attached"),
 				})
@@ -112,7 +114,7 @@ func (s *scraper) scapePlayerSummaryPage(page playwright.Page) {
 
 				log.WithField("player", player.Name).Debug("scraping player stats data")
 
-				go scrapePlayerStatsPage(rootDialog, &wg, playerStatsChan, player)
+				go scrapePlayerStatsPage(page, rootDialog, &wg, playerStatsChan, player)
 
 			default:
 

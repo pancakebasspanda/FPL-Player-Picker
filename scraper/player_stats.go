@@ -7,11 +7,20 @@ import (
 	"sync"
 )
 
-func scrapePlayerStatsPage(frame playwright.ElementHandle, wg *sync.WaitGroup, statsChan chan storage.PlayerStatsData, player storage.PlayerInfoCol) {
+func scrapePlayerStatsPage(page playwright.Page, frame playwright.ElementHandle, wg *sync.WaitGroup, statsChan chan storage.PlayerStatsData, player storage.PlayerInfoCol) {
 	defer wg.Done()
 
 	// column colNames
 	colNames := make([]storage.Col, 0)
+
+	// TODO investigate why the look up fails if we do it outside of this method. page seems not to be thread safe
+	_, err := page.WaitForSelector("#root-dialog tbody", playwright.PageWaitForSelectorOptions{
+		State: playwright.String("attached"),
+	})
+
+	if err != nil {
+		log.WithError(err).Error("player stats body not rendered")
+	}
 
 	tableHead, err := frame.QuerySelector("thead")
 

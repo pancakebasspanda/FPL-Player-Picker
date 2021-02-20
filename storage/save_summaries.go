@@ -9,8 +9,14 @@ import (
 )
 
 const (
-	_query = `
-INSERT INTO player_stats_summary(name, position, team, form, cost, selected_percentage, total_points )
+	_summaryQuery = `
+INSERT INTO player_stats_summary(name, 
+                                 position,
+                                 team,
+                                 form,
+                                 cost,
+                                 selected_percentage,
+                                 total_points )
 VALUES (?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(name)
 DO UPDATE SET
@@ -34,7 +40,7 @@ func (s SqlLite) SavePlayerSummaries(data PlayersSummaryData) {
 		return
 	}
 
-	statement, _ := s.db.Prepare(_query)
+	statement, _ := s.db.Prepare(_summaryQuery)
 
 	// insert
 	result, err := statement.Exec(summaryItem.Player.Name,

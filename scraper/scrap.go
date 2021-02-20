@@ -45,7 +45,7 @@ func (s *scraper) findMaxPagination() (int, error) {
 		return 0, fmt.Errorf("new page: %w", err)
 	}
 
-	if _, err := page.Goto(_pageURL, playwright.PageGotoOptions{Timeout: playwright.Int(10000)}); err != nil {
+	if _, err := page.Goto(_pageURL); err != nil {
 		return 0, fmt.Errorf("go to page: %w", err)
 	}
 
@@ -83,7 +83,7 @@ func (s *scraper) ScrapPage(ctx context.Context) error {
 			log.WithError(err).Error("new page")
 		}
 
-		if _, err := page.Goto(_pageURL, playwright.PageGotoOptions{Timeout: playwright.Int(10000)}); err != nil {
+		if _, err := page.Goto(_pageURL); err != nil {
 			log.WithError(err).Error("go to page")
 		}
 
@@ -101,7 +101,7 @@ func (s *scraper) ScrapPage(ctx context.Context) error {
 		pageNo, err := page.InnerText("#root strong")
 
 		if err != nil {
-			log.WithError(err).Error("selecting max pages dix")
+			log.WithError(err).Error("selecting max pages div")
 		}
 
 		log.WithField("page no", pageNo).Info("scraping....")

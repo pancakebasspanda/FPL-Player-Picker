@@ -10,10 +10,6 @@ import (
 	"pancakebasspanda/fpl_player_picker/scraper"
 )
 
-const (
-	_pageURL = "https://fantasy.premierleague.com/statistics"
-)
-
 func Runner(storage storage.Storage) {
 
 	ctx := context.Background()

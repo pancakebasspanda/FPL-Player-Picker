@@ -2,19 +2,59 @@ package storage
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
-
 	log "github.com/sirupsen/logrus"
 	"pancakebasspanda/fpl_player_picker/model"
+	"strconv"
+	"strings"
 )
+
+const _statsQuery = `
+INSERT INTO player_stats_weekly(name, 
+                                position, 
+                                team, 
+                                opposition,
+                                game_week,
+                                points,
+                                minutes_played,
+                                goals_scored,
+                                assists,
+                                clean_sheets,
+                                goals_conceded,
+                                own_goals,
+                                penalties_missed,
+                                yellow_cards,
+                                red_cards,
+                                penalties_saved,
+                                goals_saved,
+                                bonus)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?)
+ON CONFLICT(game_week, name)
+DO UPDATE SET
+position = excluded.position,
+team = excluded.team,
+opposition = excluded.opposition,
+game_week = excluded.game_week,
+points = excluded.points,
+minutes_played = excluded.minutes_played,
+goals_scored = excluded.goals_scored,
+assists = excluded.assists,
+clean_sheets = excluded.clean_sheets,
+goals_conceded = excluded.goals_conceded,
+own_goals = excluded.own_goals,
+penalties_missed = excluded.penalties_missed,
+yellow_cards = excluded.yellow_cards,
+red_cards = excluded.red_cards,
+penalties_saved = excluded.penalties_saved,
+goals_saved = excluded.goals_saved,
+bonus = excluded.bonus
+`
 
 func (s *SqlLite) SavePlayerStats(data PlayerStatsData) {
 
 	// convert to database types
 	statItems := convertToPlayerStatsData(data)
 
-	statement, _ := s.db.Prepare(_query)
+	statement, _ := s.db.Prepare(_statsQuery)
 	defer statement.Close()
 
 	for _, statItem := range statItems {
@@ -23,6 +63,7 @@ func (s *SqlLite) SavePlayerStats(data PlayerStatsData) {
 		result, err := statement.Exec(statItem.Player.Name,
 			statItem.Player.Position,
 			statItem.Player.Team,
+			statItem.Opposition,
 			statItem.GameWeek,
 			statItem.Points,
 			statItem.MinutesPlayed,
@@ -31,11 +72,11 @@ func (s *SqlLite) SavePlayerStats(data PlayerStatsData) {
 			statItem.CleanSheets,
 			statItem.GoalsConceded,
 			statItem.OwnGoals,
-			statItem.PenaltiesSaved,
 			statItem.PenaltiesMissed,
 			statItem.YellowCards,
 			statItem.RedCard,
-			statItem.Saves,
+			statItem.PenaltiesSaved,
+			statItem.GoalsSaved,
 			statItem.Bonus)
 
 		if err != nil {
@@ -199,7 +240,7 @@ func convertToPlayerStatsData(data PlayerStatsData) []model.PlayerStat {
 						log.WithField("saves", i).WithError(err).Error("saves")
 						continue
 					}
-					statItem.Saves = i
+					statItem.GoalsSaved = i
 				}
 			}
 		}

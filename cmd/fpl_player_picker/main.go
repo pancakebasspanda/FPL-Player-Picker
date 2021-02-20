@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"pancakebasspanda/fpl_player_picker/app"
 	"pancakebasspanda/fpl_player_picker/storage"
+	"time"
 )
 
 var (
@@ -22,7 +23,13 @@ func init() {
 func main() {
 	flag.Parse()
 
-	//log.SetLevel(log.InfoLevel)
+	lvl, err := log.ParseLevel(_logLevel)
+
+	if err != nil {
+		log.WithError(err).Fatal("log level")
+	}
+
+	log.SetLevel(lvl)
 
 	db, err := sql.Open("sqlite3", _dataSource)
 
@@ -34,6 +41,12 @@ func main() {
 
 	store := storage.New(db)
 
+	start := time.Now()
+
 	app.Runner(store)
+
+	elapsed := time.Since(start)
+
+	log.Infof("scraper took %s", elapsed)
 
 }

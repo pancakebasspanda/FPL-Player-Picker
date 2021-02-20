@@ -9,21 +9,22 @@ type PlayerSummary struct {
 }
 
 type PlayerStat struct {
-	Player        Player
-	Opposition    string `sql:"opposition"`
-	GameWeek      int    `sql:"game_week"`
-	Points        int    `sql:"points"`
-	MinutesPlayed int    `sql:"minutes_played"`
-	GoalsScored   int    `sql:"goals_scored"`
-	Assists       int    `sql:"assists"`
-	CleanSheets   int    `sql:"clean_sheets"`
-	GoalsConceded int    `sql:"goals_conceded"`
-	OwnGoals      int    `sql:"own_goals"`
-	Penalties     int    `sql:"penalties"`
-	YellowCards   int    `sql:"yellow_cards"`
-	RedCard       int    `sql:"red_cards"`
-	Saves         int    `sql:"saves"`
-	Bonus         int    `sql:"bonus"`
+	Player          Player
+	Opposition      string `sql:"opposition"`
+	GameWeek        int    `sql:"game_week"`
+	Points          int    `sql:"points"`
+	MinutesPlayed   int    `sql:"minutes_played"`
+	GoalsScored     int    `sql:"goals_scored"`
+	Assists         int    `sql:"assists"`
+	CleanSheets     int    `sql:"clean_sheets"`
+	GoalsConceded   int    `sql:"goals_conceded"`
+	OwnGoals        int    `sql:"own_goals"`
+	PenaltiesSaved  int    `sql:"penalties_saved"`
+	PenaltiesMissed int    `sql:"penalties_missed"`
+	YellowCards     int    `sql:"yellow_cards"`
+	RedCard         int    `sql:"red_cards"`
+	Saves           int    `sql:"saves"`
+	Bonus           int    `sql:"bonus"`
 }
 
 type Player struct {

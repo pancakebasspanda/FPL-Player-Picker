@@ -5,7 +5,7 @@ import (
 )
 
 type Storage interface {
-	SavePlayerStats()
+	SavePlayerStats(data PlayerStatsData)
 	SavePlayerSummaries(data PlayersSummaryData)
 }
 
